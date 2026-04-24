@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: true-invoices
+    runtime: node
+    plan: free
+    region: oregon
+    autoDeployTrigger: commit
+    healthCheckPath: /api/health
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_VERSION
+        value: 20
+      - key: MONGODB_URI
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: WHATSAPP_BASE_URL
+        value: https://wa.me

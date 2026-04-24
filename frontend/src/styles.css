@@ -1,0 +1,783 @@
+:root {
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  color: #1b1d1e;
+  background:
+    radial-gradient(circle at top left, rgba(236, 186, 111, 0.5), transparent 24%),
+    radial-gradient(circle at top right, rgba(51, 122, 103, 0.28), transparent 22%),
+    linear-gradient(135deg, #f6efe2 0%, #fbf8f1 45%, #eef3ea 100%);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: inherit;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+input,
+textarea,
+select {
+  width: 100%;
+  border: 1px solid rgba(27, 29, 30, 0.12);
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 16px;
+  padding: 0.9rem 1rem;
+}
+
+textarea {
+  min-height: 110px;
+  resize: vertical;
+}
+
+button {
+  border: 0;
+  cursor: pointer;
+}
+
+.center-screen,
+.auth-layout {
+  min-height: 100vh;
+}
+
+.auth-layout {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+}
+
+.auth-hero {
+  padding: 4rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 1rem;
+}
+
+.eyebrow {
+  font-size: 0.8rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #337a67;
+}
+
+.auth-hero h1 {
+  font-size: clamp(2.8rem, 5vw, 5rem);
+  line-height: 0.98;
+  margin: 0;
+}
+
+.auth-hero p {
+  font-size: 1.1rem;
+  max-width: 540px;
+}
+
+.auth-panel {
+  background: rgba(255, 252, 247, 0.86);
+  backdrop-filter: blur(18px);
+  padding: 2rem;
+  margin: 2rem;
+  border-radius: 32px;
+  box-shadow: 0 24px 60px rgba(70, 56, 22, 0.12);
+}
+
+.auth-tabs {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.auth-divider {
+  position: relative;
+  text-align: center;
+  color: rgba(27, 29, 30, 0.55);
+}
+
+.auth-divider::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  border-top: 1px solid rgba(27, 29, 30, 0.12);
+}
+
+.auth-divider span {
+  position: relative;
+  background: rgba(255, 252, 247, 0.95);
+  padding: 0 0.8rem;
+}
+
+.google-signin-wrap {
+  display: flex;
+  justify-content: center;
+}
+
+.auth-tabs button,
+.ghost-button,
+.primary-button,
+.link-button,
+.sidebar-link {
+  border-radius: 999px;
+  padding: 0.8rem 1.2rem;
+}
+
+.auth-tabs button {
+  background: transparent;
+}
+
+.auth-tabs button.active,
+.primary-button {
+  background: #1d5748;
+  color: #fff;
+}
+
+.ghost-button {
+  background: rgba(29, 87, 72, 0.12);
+  color: #1d5748;
+}
+
+.ghost-button.small {
+  padding: 0.55rem 0.9rem;
+}
+
+.danger-button {
+  background: rgba(186, 58, 58, 0.16);
+  color: #8d1f1f;
+}
+
+.link-button {
+  background: transparent;
+  color: #1d5748;
+  padding: 0;
+  text-decoration: underline;
+}
+
+.sidebar-link {
+  background: rgba(255, 255, 255, 0.08);
+  color: #f6efe2;
+  text-align: left;
+}
+
+.sidebar-link.active {
+  background: #f6efe2;
+  color: #163630;
+}
+
+.auth-form,
+.form-grid,
+.stack-grid {
+  display: grid;
+  gap: 1rem;
+}
+
+.auth-grid,
+.form-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.stack-grid {
+  grid-template-columns: 1fr;
+  margin-bottom: 1.5rem;
+}
+
+.full-span,
+.form-grid textarea,
+.form-grid button,
+.invoice-summary,
+.invoice-line,
+.toolbar-row {
+  grid-column: 1 / -1;
+}
+
+.alert {
+  padding: 0.95rem 1rem;
+  border-radius: 18px;
+  margin-bottom: 1rem;
+}
+
+.alert.success {
+  background: rgba(63, 142, 93, 0.12);
+  color: #1f5c37;
+}
+
+.alert.error {
+  background: rgba(186, 58, 58, 0.1);
+  color: #8d1f1f;
+}
+
+.dashboard-shell {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  min-height: 100vh;
+}
+
+.sidebar {
+  padding: 2rem;
+  background: #163630;
+  color: #f6efe2;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 1.5rem;
+}
+
+.sidebar-top,
+.sidebar-nav {
+  display: grid;
+  gap: 1rem;
+}
+
+.sidebar-logout {
+  width: 100%;
+  margin-top: auto;
+}
+
+.dashboard-main {
+  padding: 2rem;
+}
+
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.topbar h2,
+.sidebar h1,
+.section-head h2,
+.stat-card strong,
+.print-header h1,
+.print-header h2 {
+  margin: 0;
+}
+
+.stats-grid,
+.content-grid,
+.detail-grid {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.stats-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-bottom: 1.5rem;
+}
+
+.compact-stats {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.content-grid,
+.detail-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-bottom: 1.5rem;
+}
+
+.section-card,
+.stat-card {
+  background: rgba(255, 253, 249, 0.84);
+  border: 1px solid rgba(27, 29, 30, 0.06);
+  border-radius: 28px;
+  padding: 1.25rem;
+  box-shadow: 0 14px 34px rgba(78, 60, 20, 0.08);
+}
+
+.section-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.stat-card {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.stat-card strong {
+  font-size: 1.8rem;
+}
+
+.stat-success {
+  background: rgba(230, 247, 234, 0.88);
+}
+
+.stat-warning {
+  background: rgba(255, 240, 215, 0.9);
+}
+
+.invoice-line {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr 0.7fr 0.8fr 0.7fr;
+  gap: 0.75rem;
+}
+
+.invoice-summary,
+.toolbar-row,
+.inline-actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.voice-assistant {
+  display: grid;
+  gap: 1rem;
+}
+
+.voice-helper,
+.muted-text {
+  margin: 0;
+  color: rgba(27, 29, 30, 0.72);
+}
+
+.voice-summary {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  background: rgba(20, 70, 59, 0.08);
+  padding: 1rem;
+  border-radius: 18px;
+}
+
+.voice-warnings {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.profile-card {
+  display: grid;
+  gap: 0.35rem;
+  padding: 1rem 1.1rem;
+  border-radius: 20px;
+  background: rgba(29, 87, 72, 0.08);
+}
+
+.profile-card p,
+.profile-card strong {
+  margin: 0;
+}
+
+.checkbox-field {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid rgba(27, 29, 30, 0.12);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.checkbox-field input {
+  width: auto;
+  margin: 0;
+}
+
+.invoice-summary {
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(29, 87, 72, 0.08);
+  padding: 1rem;
+  border-radius: 18px;
+}
+
+.table-wrap {
+  overflow: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  text-align: left;
+  padding: 0.85rem 0.5rem;
+  border-bottom: 1px solid rgba(27, 29, 30, 0.08);
+  vertical-align: top;
+}
+
+.badge {
+  text-transform: capitalize;
+  padding: 0.35rem 0.7rem;
+  border-radius: 999px;
+  font-size: 0.85rem;
+}
+
+.badge-unpaid {
+  background: rgba(186, 58, 58, 0.12);
+}
+
+.badge-partial {
+  background: rgba(232, 163, 43, 0.18);
+}
+
+.badge-paid {
+  background: rgba(63, 142, 93, 0.14);
+}
+
+.badge-overdue {
+  background: rgba(118, 29, 29, 0.16);
+  color: #761d1d;
+}
+
+.invoice-detail {
+  display: grid;
+  gap: 0.35rem;
+  margin-bottom: 1rem;
+}
+
+.invoice-detail p,
+.print-sheet p {
+  margin: 0;
+}
+
+.print-sheet {
+  background: #fff;
+  color: #14201d;
+  border: 1px solid #d5ddd8;
+  padding: 1.8rem;
+  border-radius: 24px;
+  display: grid;
+  gap: 1.25rem;
+  position: relative;
+  overflow: hidden;
+  page-break-inside: avoid;
+  break-inside: avoid;
+}
+
+.print-banner {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #dce6df;
+}
+
+.print-eyebrow,
+.print-label {
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 0.76rem;
+  color: #5a6f67;
+}
+
+.print-status-block {
+  text-align: right;
+  display: grid;
+  gap: 0.5rem;
+  justify-items: end;
+}
+
+.print-meta-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.print-info-card,
+.print-summary-card,
+.print-totals-card {
+  background: #f7faf8;
+  border: 1px solid #dce6df;
+  border-radius: 18px;
+  padding: 1rem;
+  display: grid;
+  gap: 0.35rem;
+}
+
+.print-info-card strong,
+.print-summary-card strong {
+  font-size: 1rem;
+}
+
+.print-table {
+  margin: 0;
+  table-layout: fixed;
+}
+
+.print-table th {
+  background: #eef5f1;
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.print-table th:first-child,
+.print-table td:first-child {
+  width: 56px;
+}
+
+.print-table th:nth-child(2),
+.print-table td:nth-child(2) {
+  width: 34%;
+}
+
+.print-table th,
+.print-table td {
+  word-break: break-word;
+}
+
+.print-summary-grid {
+  display: grid;
+  grid-template-columns: 1.2fr 0.8fr;
+  gap: 1rem;
+}
+
+.print-total-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: center;
+}
+
+.print-total-row.balance {
+  padding-top: 0.75rem;
+  border-top: 1px dashed #bfd0c7;
+  font-size: 1.05rem;
+}
+
+.print-footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: end;
+}
+
+.print-footer-note {
+  max-width: 55%;
+}
+
+.print-signature {
+  min-width: 240px;
+  display: grid;
+  gap: 0.45rem;
+  justify-items: end;
+  text-align: right;
+}
+
+.signature-line {
+  width: 220px;
+  border-top: 1px solid #14201d;
+  margin-top: 1.5rem;
+}
+
+.print-paid-stamp {
+  position: absolute;
+  top: 1.9rem;
+  right: 1.6rem;
+  border: 4px solid rgba(25, 114, 54, 0.85);
+  color: rgba(25, 114, 54, 0.85);
+  border-radius: 16px;
+  padding: 0.35rem 1rem;
+  font-size: 1.4rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  transform: rotate(10deg);
+  opacity: 0.8;
+}
+
+@media (max-width: 1080px) {
+  .auth-layout,
+  .dashboard-shell,
+  .content-grid,
+  .detail-grid,
+  .stats-grid,
+  .compact-stats,
+  .auth-grid,
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .invoice-line {
+    grid-template-columns: 1fr;
+  }
+
+  .auth-panel,
+  .auth-hero,
+  .dashboard-main,
+  .sidebar {
+    margin: 0;
+    padding: 1.25rem;
+  }
+
+  .topbar,
+  .invoice-summary,
+  .print-banner,
+  .print-footer {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .print-meta-grid,
+  .print-summary-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .print-status-block,
+  .print-signature {
+    justify-items: start;
+    text-align: left;
+  }
+
+  .print-footer-note {
+    max-width: 100%;
+  }
+}
+
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 8mm;
+  }
+
+  html,
+  body {
+    width: 210mm;
+    height: 297mm;
+    font-size: 11px;
+    background: #fff;
+  }
+
+  body {
+    background: #fff;
+  }
+
+  .sidebar,
+  .topbar,
+  .stats-grid,
+  .compact-stats,
+  .content-grid,
+  .stack-grid,
+  .invoice-detail,
+  form,
+  .alert,
+  .section-head,
+  .table-wrap {
+    display: none !important;
+  }
+
+  .dashboard-main,
+  .section-card,
+  .detail-grid,
+  .print-sheet {
+    padding: 0;
+    box-shadow: none;
+    background: #fff;
+    border: 0;
+  }
+
+  .print-info-card,
+  .print-summary-card,
+  .print-totals-card {
+    background: #fff;
+    border: 1px solid #ddd;
+  }
+
+  .dashboard-main {
+    padding: 0 !important;
+  }
+
+  .detail-grid {
+    display: block !important;
+  }
+
+  .section-card:last-child {
+    display: block !important;
+  }
+
+  .print-sheet {
+    width: 194mm;
+    min-height: 0;
+    max-height: 281mm;
+    padding: 5mm;
+    gap: 3mm;
+    border: 0;
+    border-radius: 0;
+    font-size: 11px;
+    line-height: 1.25;
+  }
+
+  .print-banner {
+    padding-bottom: 2.5mm;
+    gap: 3mm;
+  }
+
+  .print-banner h1,
+  .print-status-block h2 {
+    font-size: 18px;
+    line-height: 1.1;
+  }
+
+  .print-eyebrow,
+  .print-label {
+    font-size: 9px;
+    letter-spacing: 0.08em;
+  }
+
+  .print-meta-grid,
+  .print-summary-grid {
+    gap: 2.5mm;
+  }
+
+  .print-info-card,
+  .print-summary-card,
+  .print-totals-card {
+    padding: 2.5mm;
+    gap: 1mm;
+    border-radius: 8px;
+  }
+
+  .print-table th,
+  .print-table td {
+    padding: 1.8mm 1.5mm;
+    font-size: 10px;
+  }
+
+  .print-table th {
+    font-size: 9px;
+  }
+
+  .print-total-row.balance {
+    padding-top: 2mm;
+  }
+
+  .print-footer {
+    gap: 3mm;
+    align-items: end;
+  }
+
+  .print-footer-note {
+    max-width: 38%;
+  }
+
+  .print-signature {
+    min-width: 0;
+  }
+
+  .signature-line {
+    width: 42mm;
+    margin-top: 5mm;
+  }
+
+  .print-paid-stamp {
+    top: 7mm;
+    right: 7mm;
+    font-size: 12px;
+    padding: 1mm 3mm;
+    border-width: 2px;
+  }
+}
