@@ -6,7 +6,7 @@ import { StatCard } from "../components/StatCard";
 import { useAuth } from "../context/AuthContext";
 
 const customerInitial = { name: "", email: "", phone: "", gstNumber: "", address: "" };
-const productInitial = { name: "", sku: "", unit: "pcs", price: "", gstRate: "18", description: "" };
+const productInitial = { name: "", sku: "", unit: "pcs", price: "", gstRate: "18", stock: "0", description: "" };
 const paymentInitial = {
   invoiceId: "",
   amount: "",
@@ -29,7 +29,7 @@ function createEmptyInvoiceForm() {
     issueDate: new Date().toISOString().slice(0, 10),
     dueDate: new Date().toISOString().slice(0, 10),
     notes: "",
-    items: [{ productId: "", name: "", quantity: 1, unitPrice: "", gstRate: 18 }],
+    items: [{ productId: "", name: "", quantity: 1, unitPrice: "", gstRate: 18, discountRate: 0 }],
   };
 }
 
@@ -47,7 +47,7 @@ function getRoundedBillAmounts(invoiceLike) {
 
   return {
     roundOff,
-    finalTotal: Number((totalAmount + roundOff).toFixed(2)),
+    finalTotal: Number(totalAmount.toFixed(2)),
   };
 }
 
@@ -170,18 +170,25 @@ export function DashboardPage() {
       (sum, item) => sum + Number(item.quantity || 0) * Number(item.unitPrice || 0),
       0
     );
+    const discount = invoiceForm.items.reduce((sum, item) => {
+      const base = Number(item.quantity || 0) * Number(item.unitPrice || 0);
+      return sum + (base * Number(item.discountRate || 0)) / 100;
+    }, 0);
     const total = invoiceForm.items.reduce((sum, item) => {
       const base = Number(item.quantity || 0) * Number(item.unitPrice || 0);
-      return sum + base + (base * Number(item.gstRate || 0)) / 100;
+      const discountAmount = (base * Number(item.discountRate || 0)) / 100;
+      const taxableAmount = base - discountAmount;
+      return sum + taxableAmount + (taxableAmount * Number(item.gstRate || 0)) / 100;
     }, 0);
     const roundedTotal = Math.round(total);
 
     return {
       subtotal,
+      discount,
       total,
       roundOff: Number((roundedTotal - total).toFixed(2)),
       finalTotal: roundedTotal,
-      tax: total - subtotal,
+      tax: total - (subtotal - discount),
     };
   })();
 
@@ -287,6 +294,7 @@ export function DashboardPage() {
           ...productForm,
           price: Number(productForm.price),
           gstRate: Number(productForm.gstRate),
+          stock: Number(productForm.stock),
         }),
       });
       resetProductForm();
@@ -304,6 +312,7 @@ export function DashboardPage() {
       unit: product.unit || "pcs",
       price: String(product.price ?? ""),
       gstRate: String(product.gstRate ?? "18"),
+      stock: String(product.stock ?? "0"),
       description: product.description || "",
     });
     setEditingProductId(product._id);
@@ -325,6 +334,7 @@ export function DashboardPage() {
             quantity: Number(item.quantity),
             unitPrice: Number(item.unitPrice),
             gstRate: Number(item.gstRate),
+            discountRate: Number(item.discountRate || 0),
           })),
         }),
       });
@@ -448,6 +458,7 @@ export function DashboardPage() {
         quantity: item.quantity,
         unitPrice: item.unitPrice,
         gstRate: item.gstRate,
+        discountRate: item.discountRate || 0,
       })),
     });
     setEditingInvoiceId(invoice._id);
@@ -537,6 +548,7 @@ export function DashboardPage() {
       name: product?.name || "",
       unitPrice: product?.price || "",
       gstRate: product?.gstRate || 18,
+      discountRate: items[index].discountRate || 0,
     };
     setInvoiceForm({ ...invoiceForm, items });
   }
@@ -838,6 +850,14 @@ export function DashboardPage() {
                   value={productForm.gstRate}
                   onChange={(event) => setProductForm({ ...productForm, gstRate: event.target.value })}
                 />
+                <input
+                  type="number"
+                  min="0"
+                  step="1"
+                  placeholder="Stock quantity"
+                  value={productForm.stock}
+                  onChange={(event) => setProductForm({ ...productForm, stock: event.target.value })}
+                />
                 <textarea
                   placeholder="Description"
                   value={productForm.description}
@@ -857,6 +877,7 @@ export function DashboardPage() {
                       <th>Unit</th>
                       <th>Price</th>
                       <th>GST %</th>
+                      <th>Stock</th>
                       <th>Action</th>
                     </tr>
                   </thead>
@@ -868,6 +889,7 @@ export function DashboardPage() {
                         <td>{product.unit || "-"}</td>
                         <td>{formatCurrency(product.price)}</td>
                         <td>{product.gstRate}</td>
+                        <td>{product.stock ?? 0}</td>
                         <td>
                           <button className="ghost-button small" onClick={() => startEditProduct(product)}>
                             Edit
@@ -979,22 +1001,28 @@ export function DashboardPage() {
                 {invoiceForm.items.map((item, index) => (
                   <div className="invoice-line" key={index}>
                     <select value={item.productId} onChange={(event) => handleProductSelect(index, event.target.value)}>
-                      <option value="">Select product</option>
+                      <option value="">Select stock item</option>
                       {products.map((product) => (
                         <option key={product._id} value={product._id}>
-                          {product.name}
+                          {product.name} - Stock: {product.stock ?? 0}
                         </option>
                       ))}
                     </select>
                     <input
                       placeholder="Item name"
                       value={item.name}
+                      readOnly
                       onChange={(event) => {
                         const items = [...invoiceForm.items];
                         items[index].name = event.target.value;
                         setInvoiceForm({ ...invoiceForm, items });
                       }}
                     />
+                    {item.productId ? (
+                      <span className="stock-note">
+                        Available: {products.find((product) => product._id === item.productId)?.stock ?? 0}
+                      </span>
+                    ) : null}
                     <input
                       type="number"
                       min="1"
@@ -1022,6 +1050,19 @@ export function DashboardPage() {
                     <input
                       type="number"
                       min="0"
+                      max="100"
+                      step="0.01"
+                      placeholder="Disc %"
+                      value={item.discountRate}
+                      onChange={(event) => {
+                        const items = [...invoiceForm.items];
+                        items[index].discountRate = event.target.value;
+                        setInvoiceForm({ ...invoiceForm, items });
+                      }}
+                    />
+                    <input
+                      type="number"
+                      min="0"
                       step="0.01"
                       placeholder="GST %"
                       value={item.gstRate}
@@ -1041,7 +1082,10 @@ export function DashboardPage() {
                     onClick={() =>
                       setInvoiceForm({
                         ...invoiceForm,
-                        items: [...invoiceForm.items, { productId: "", name: "", quantity: 1, unitPrice: "", gstRate: 18 }],
+                        items: [
+                          ...invoiceForm.items,
+                          { productId: "", name: "", quantity: 1, unitPrice: "", gstRate: 18, discountRate: 0 },
+                        ],
                       })
                     }
                   >
@@ -1071,6 +1115,7 @@ export function DashboardPage() {
 
                 <div className="invoice-summary">
                   <span>Subtotal: {formatCurrency(invoicePreviewTotals.subtotal)}</span>
+                  <span>Discount: {formatCurrency(invoicePreviewTotals.discount)}</span>
                   <span>Tax: {formatCurrency(invoicePreviewTotals.tax)}</span>
                   <span>Round Off: {formatCurrency(invoicePreviewTotals.roundOff)}</span>
                   <strong>Final Total: {formatCurrency(invoicePreviewTotals.finalTotal)}</strong>

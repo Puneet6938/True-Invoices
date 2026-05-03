@@ -109,7 +109,9 @@ export function parseVoiceInvoiceCommand(command, { customers = [], products = [
   if (!itemName) {
     warnings.push("Could not clearly detect the product or item name");
   } else if (!matchedProduct) {
-    warnings.push(`No saved product matched "${itemName}", so this will be added as a custom line item`);
+    warnings.push(`No saved product matched "${itemName}". Bills can only use products available in stock.`);
+  } else if (Number(matchedProduct.stock || 0) < effectiveQuantity) {
+    warnings.push(`Only ${matchedProduct.stock} ${matchedProduct.unit || "units"} available for ${matchedProduct.name}`);
   }
 
   if (effectiveTotal === null && !matchedProduct?.price) {
@@ -130,6 +132,7 @@ export function parseVoiceInvoiceCommand(command, { customers = [], products = [
         quantity: effectiveQuantity,
         unitPrice,
         gstRate: matchedProduct?.gstRate ?? gstRate,
+        discountRate: 0,
       },
     ],
   };

@@ -25,6 +25,122 @@ async function syncInvoiceStatuses(ownerId) {
   );
 }
 
+function getProductQuantityMap(items = []) {
+  return items.reduce((map, item) => {
+    if (!item.product) {
+      return map;
+    }
+
+    const productId = String(item.product);
+    map.set(productId, (map.get(productId) || 0) + Number(item.quantity || 0));
+    return map;
+  }, new Map());
+}
+
+async function restoreInvoiceStock(items = []) {
+  const quantityMap = getProductQuantityMap(items);
+
+  if (quantityMap.size === 0) {
+    return;
+  }
+
+  await Product.bulkWrite(
+    Array.from(quantityMap.entries()).map(([productId, quantity]) => ({
+      updateOne: {
+        filter: { _id: productId },
+        update: { $inc: { stock: quantity } },
+      },
+    }))
+  );
+}
+
+async function reduceInvoiceStock(ownerId, items = []) {
+  const quantityMap = getProductQuantityMap(items);
+
+  if (quantityMap.size === 0) {
+    return;
+  }
+
+  const productIds = Array.from(quantityMap.keys());
+  const products = await Product.find({
+    _id: { $in: productIds },
+    owner: ownerId,
+  });
+  const productMap = new Map(products.map((product) => [String(product._id), product]));
+
+  for (const [productId, quantity] of quantityMap.entries()) {
+    const product = productMap.get(productId);
+
+    if (!product) {
+      throw httpError(400, "One or more products are invalid");
+    }
+
+    if (Number(product.stock || 0) < quantity) {
+      throw httpError(400, `Only ${product.stock} ${product.unit || "units"} available for ${product.name}`);
+    }
+  }
+
+  await Product.bulkWrite(
+    Array.from(quantityMap.entries()).map(([productId, quantity]) => ({
+      updateOne: {
+        filter: { _id: productId, owner: ownerId, stock: { $gte: quantity } },
+        update: { $inc: { stock: -quantity } },
+      },
+    }))
+  );
+}
+
+async function buildInvoiceItems(ownerId, items = []) {
+  const productIds = items.map((item) => item.productId).filter(Boolean);
+
+  if (productIds.length !== items.length) {
+    throw httpError(400, "Each invoice item must use a saved product from stock");
+  }
+
+  const products = await Product.find({
+    _id: { $in: productIds },
+    owner: ownerId,
+  });
+  const productMap = new Map(products.map((product) => [String(product._id), product]));
+
+  const rawItems = items.map((item) => {
+    const product = productMap.get(String(item.productId));
+
+    if (!product) {
+      throw httpError(400, "One or more products are invalid");
+    }
+
+    return {
+      product: product._id,
+      name: product.name,
+      quantity: item.quantity,
+      unitPrice: item.unitPrice ?? product.price,
+      gstRate: item.gstRate ?? product.gstRate ?? 0,
+      discountRate: item.discountRate ?? 0,
+    };
+  });
+
+  if (
+    rawItems.some(
+      (item) =>
+        !item.name ||
+        !Number.isFinite(Number(item.quantity)) ||
+        Number(item.quantity) <= 0 ||
+        !Number.isFinite(Number(item.unitPrice)) ||
+        Number(item.unitPrice) < 0 ||
+        !Number.isFinite(Number(item.gstRate)) ||
+        Number(item.gstRate) < 0 ||
+        !Number.isFinite(Number(item.discountRate)) ||
+        Number(item.discountRate) < 0 ||
+        Number(item.discountRate) > 100
+    )
+  ) {
+    throw httpError(400, "Each invoice item must have product, quantity, unit price, and discount between 0 and 100");
+  }
+
+  return rawItems;
+}
+
 router.get("/stats/overview", async (req, res, next) => {
   try {
     await syncInvoiceStatuses(req.user._id);
@@ -134,52 +250,34 @@ router.post("/", async (req, res, next) => {
       throw httpError(404, "Customer not found");
     }
 
-    const productIds = items.map((item) => item.productId).filter(Boolean);
-    const products = await Product.find({
-      _id: { $in: productIds },
-      owner: req.user._id,
-    });
+    const rawItems = await buildInvoiceItems(req.user._id, items);
+    const { normalizedItems, subtotal, discountAmount, taxAmount, roundOff, totalAmount } =
+      calculateInvoiceTotals(rawItems);
+    await reduceInvoiceStock(req.user._id, normalizedItems);
 
-    const productMap = new Map(products.map((product) => [String(product._id), product]));
-
-    const rawItems = items.map((item) => {
-      const product = item.productId ? productMap.get(String(item.productId)) : null;
-
-      if (item.productId && !product) {
-        throw httpError(400, "One or more products are invalid");
-      }
-
-      return {
-        product: product?._id,
-        name: item.name || product?.name,
-        quantity: item.quantity,
-        unitPrice: item.unitPrice ?? product?.price,
-        gstRate: item.gstRate ?? product?.gstRate ?? 0,
-      };
-    });
-
-    if (rawItems.some((item) => !item.name || !item.quantity || item.unitPrice === undefined)) {
-      throw httpError(400, "Each invoice item must have name, quantity, and unit price");
+    let invoice;
+    try {
+      invoice = await Invoice.create({
+        owner: req.user._id,
+        customer: customer._id,
+        invoiceNumber: generateInvoiceNumber(),
+        issueDate,
+        dueDate,
+        items: normalizedItems,
+        subtotal,
+        discountAmount,
+        taxAmount,
+        roundOff,
+        totalAmount,
+        amountPaid: 0,
+        balanceDue: totalAmount,
+        status: "unpaid",
+        notes,
+      });
+    } catch (error) {
+      await restoreInvoiceStock(normalizedItems);
+      throw error;
     }
-
-    const { normalizedItems, subtotal, taxAmount, roundOff, totalAmount } = calculateInvoiceTotals(rawItems);
-
-    const invoice = await Invoice.create({
-      owner: req.user._id,
-      customer: customer._id,
-      invoiceNumber: generateInvoiceNumber(),
-      issueDate,
-      dueDate,
-      items: normalizedItems,
-      subtotal,
-      taxAmount,
-      roundOff,
-      totalAmount,
-      amountPaid: 0,
-      balanceDue: totalAmount,
-      status: "unpaid",
-      notes,
-    });
 
     const populatedInvoice = await Invoice.findById(invoice._id).populate("customer");
     res.status(201).json(populatedInvoice);
@@ -214,52 +312,37 @@ router.put("/:id", async (req, res, next) => {
       throw httpError(404, "Customer not found");
     }
 
-    const productIds = items.map((item) => item.productId).filter(Boolean);
-    const products = await Product.find({
-      _id: { $in: productIds },
-      owner: req.user._id,
-    });
-
-    const productMap = new Map(products.map((product) => [String(product._id), product]));
-
-    const rawItems = items.map((item) => {
-      const product = item.productId ? productMap.get(String(item.productId)) : null;
-
-      if (item.productId && !product) {
-        throw httpError(400, "One or more products are invalid");
-      }
-
-      return {
-        product: product?._id,
-        name: item.name || product?.name,
-        quantity: item.quantity,
-        unitPrice: item.unitPrice ?? product?.price,
-        gstRate: item.gstRate ?? product?.gstRate ?? 0,
-      };
-    });
-
-    if (rawItems.some((item) => !item.name || !item.quantity || item.unitPrice === undefined)) {
-      throw httpError(400, "Each invoice item must have name, quantity, and unit price");
-    }
-
-    const { normalizedItems, subtotal, taxAmount, roundOff, totalAmount } = calculateInvoiceTotals(rawItems);
+    const rawItems = await buildInvoiceItems(req.user._id, items);
+    const { normalizedItems, subtotal, discountAmount, taxAmount, roundOff, totalAmount } =
+      calculateInvoiceTotals(rawItems);
 
     if (invoice.amountPaid > totalAmount) {
       throw httpError(400, "Invoice total cannot be lower than the amount already paid");
     }
 
-    invoice.customer = customer._id;
-    invoice.issueDate = issueDate;
-    invoice.dueDate = dueDate;
-    invoice.items = normalizedItems;
-    invoice.subtotal = subtotal;
-    invoice.taxAmount = taxAmount;
-    invoice.roundOff = roundOff;
-    invoice.totalAmount = totalAmount;
-    invoice.balanceDue = Number((totalAmount - invoice.amountPaid).toFixed(2));
-    invoice.status = deriveInvoiceStatus(invoice);
-    invoice.notes = notes ?? "";
-    await invoice.save();
+    const previousItems = invoice.items.map((item) => item.toObject());
+
+    await restoreInvoiceStock(previousItems);
+    try {
+      await reduceInvoiceStock(req.user._id, normalizedItems);
+
+      invoice.customer = customer._id;
+      invoice.issueDate = issueDate;
+      invoice.dueDate = dueDate;
+      invoice.items = normalizedItems;
+      invoice.subtotal = subtotal;
+      invoice.discountAmount = discountAmount;
+      invoice.taxAmount = taxAmount;
+      invoice.roundOff = roundOff;
+      invoice.totalAmount = totalAmount;
+      invoice.balanceDue = Number((totalAmount - invoice.amountPaid).toFixed(2));
+      invoice.status = deriveInvoiceStatus(invoice);
+      invoice.notes = notes ?? "";
+      await invoice.save();
+    } catch (error) {
+      await reduceInvoiceStock(req.user._id, previousItems);
+      throw error;
+    }
 
     const populatedInvoice = await Invoice.findById(invoice._id).populate("customer");
     res.json(populatedInvoice);
@@ -283,6 +366,7 @@ router.delete("/:id", async (req, res, next) => {
       owner: req.user._id,
       invoice: invoice._id,
     });
+    await restoreInvoiceStock(invoice.items);
     await invoice.deleteOne();
 
     res.json({ message: "Invoice deleted" });

@@ -88,7 +88,7 @@ Add these in the Render dashboard only if you need them:
 Render will use:
 
 ```bash
-npm install && npm run build
+npm ci --include=dev && npm run build
 npm start
 ```
 

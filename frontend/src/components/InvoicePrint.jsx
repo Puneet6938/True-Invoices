@@ -15,7 +15,7 @@ function getRoundOffAmount(invoice) {
 }
 
 function getRoundedTotalAmount(invoice) {
-  return Number((Number(invoice?.totalAmount || 0) + getRoundOffAmount(invoice)).toFixed(2));
+  return Number(Number(invoice?.totalAmount || 0).toFixed(2));
 }
 
 function numberToWordsUnderThousand(value) {
@@ -141,6 +141,7 @@ export function InvoicePrint({ invoice, firm, user }) {
             <th>Description</th>
             <th>Qty</th>
             <th>Rate</th>
+            <th>Disc %</th>
             <th>GST %</th>
             <th>Line Total</th>
           </tr>
@@ -152,6 +153,7 @@ export function InvoicePrint({ invoice, firm, user }) {
               <td>{item.name}</td>
               <td>{item.quantity}</td>
               <td>{formatCurrency(item.unitPrice)}</td>
+              <td>{Number(item.discountRate || 0)}%</td>
               <td>{item.gstRate}%</td>
               <td>{formatCurrency(item.lineTotal)}</td>
             </tr>
@@ -170,6 +172,10 @@ export function InvoicePrint({ invoice, firm, user }) {
           <div className="print-total-row">
             <span>Subtotal</span>
             <strong>{formatCurrency(invoice.subtotal)}</strong>
+          </div>
+          <div className="print-total-row">
+            <span>Discount</span>
+            <strong>{formatCurrency(invoice.discountAmount)}</strong>
           </div>
           <div className="print-total-row">
             <span>Tax</span>

@@ -15,7 +15,7 @@ router.get("/", async (req, res, next) => {
 
 router.post("/", async (req, res, next) => {
   try {
-    const { name, sku, unit, price, gstRate, description } = req.body;
+    const { name, sku, unit, price, gstRate, stock, description } = req.body;
 
     if (!name || price === undefined) {
       throw httpError(400, "Product name and price are required");
@@ -28,6 +28,7 @@ router.post("/", async (req, res, next) => {
       unit,
       price,
       gstRate,
+      stock: stock ?? 0,
       description,
     });
 
@@ -48,7 +49,10 @@ router.put("/:id", async (req, res, next) => {
       throw httpError(404, "Product not found");
     }
 
-    Object.assign(product, req.body);
+    Object.assign(product, {
+      ...req.body,
+      stock: req.body.stock ?? product.stock,
+    });
     await product.save();
     res.json(product);
   } catch (error) {

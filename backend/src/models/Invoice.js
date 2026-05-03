@@ -25,6 +25,19 @@ const invoiceItemSchema = new mongoose.Schema(
       required: true,
       min: 0,
     },
+    discountRate: {
+      type: Number,
+      required: true,
+      min: 0,
+      max: 100,
+      default: 0,
+    },
+    discountAmount: {
+      type: Number,
+      required: true,
+      min: 0,
+      default: 0,
+    },
     lineTotal: {
       type: Number,
       required: true,
@@ -71,6 +84,11 @@ const invoiceSchema = new mongoose.Schema(
     taxAmount: {
       type: Number,
       required: true,
+      min: 0,
+    },
+    discountAmount: {
+      type: Number,
+      default: 0,
       min: 0,
     },
     roundOff: {
